@@ -62,7 +62,7 @@ def cbx_to_pdf(input_file,output_file,work_dir)
     counter=0
     Prawn::Document.generate(output_file, :margin => [0,0,0,0]) do |pdf|
       file_array.each do |file_name|
-        if file_name.match(/[0-9]/) and file_name.match(/jpg$/)
+        if file_name.match(/[0-9]/) and file_name.match(/[jpg|JPG]$/)
           scale=1
           image_file=tmp_dir+"/"+file_name
           image_size=FastImage.size(image_file)
