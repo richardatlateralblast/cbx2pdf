@@ -1,0 +1,9 @@
+# Changes:
+# 0.0.1: Sun 4 Aug 2013
+# Initial script
+# 0.0.2: Tue 6 Aug 2013
+# Minor bug fix
+# 0.0.3: Tue 6 Aug 2013
+# Another minor bug fix
+# 0.0.4: Mon 23 Dec 2013 05:39:56 EST
+# Added code to change page orientation to landscape if the width of the image is greater than the height

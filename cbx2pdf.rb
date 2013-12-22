@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         cbx2pdf
-# Version:      0.0.3
+# Version:      0.0.4
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -20,7 +20,7 @@ require 'filemagic'
 work_dir="/tmp/cbx2pdf"
 
 if !Dir.exists?(work_dir)
-  Dir.mkdir(work_dir)  
+  Dir.mkdir(work_dir)
 end
 
 def print_version()
@@ -60,24 +60,49 @@ def cbx_to_pdf(input_file,output_file,work_dir)
     file_array=Dir.entries(tmp_dir)
     array_size=file_array.length
     counter=0
+    number=0
     Prawn::Document.generate(output_file, :margin => [0,0,0,0]) do |pdf|
+      original_height=pdf.bounds.height
       file_array.each do |file_name|
         if file_name.match(/[0-9]/) and file_name.match(/[jpg|JPG]$/)
+          orientation="portrait"
           scale=1
           image_file=tmp_dir+"/"+file_name
           image_size=FastImage.size(image_file)
           width=image_size[0]
           height=image_size[1]
-          if height > pdf.bounds.height
+          if width > height
+            orientation="landscape"
+            scale=pdf.bounds.height/width
+            if pdf.bounds.height < original_height
+              multiplier=original_height/pdf.bounds.height
+              scale=scale*multiplier
+            end
+            scale=scale*0.99
+          else
+            orientation="portrait"
             scale=pdf.bounds.height/height
             scale=scale*0.99
           end
-          if counter > 0
-            pdf.start_new_page
+          if counter == 0
+            if width > height
+              scale=pdf.bounds.width/width
+            else
+              scale=original_height/height
+            end
+            scale=scale*0.99
+            pdf.image image_file, :position => :center, :vposition => :center, :scale => scale
+          else
+            pdf.image image_file, :position => :center, :vposition => :center, :scale => scale
           end
-          pdf.image image_file, :position => :center, :vposition => :center, :scale => scale
+          number=counter+1
+          pdf.outline.page :title => "Page: #{number}", :destination => counter
           counter=counter+1
-          pdf.outline.page :title => "Page: #{counter}", :destination => counter
+          if orientation == "portrait"
+            pdf.start_new_page
+          else
+            pdf.start_new_page(:layout => :landscape)
+          end
         end
       end
     end
