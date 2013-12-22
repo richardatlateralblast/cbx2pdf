@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         cbx2pdf
-# Version:      0.0.4
+# Version:      0.0.5
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -58,10 +58,29 @@ def cbx_to_pdf(input_file,output_file,work_dir)
     end
     system(command)
     file_array=Dir.entries(tmp_dir)
-    array_size=file_array.length
-    counter=0
-    number=0
+    new_array=[]
+    last_file_name=""
+    file_array.each do |file_name|
+      if file_name.downcase.match(/front/)
+        new_array.insert(0,file_name)
+      else
+        if file_name.downcase.match(/back/)
+          last_file_name=file_name
+        else
+          if file_name.match(/[A-z|0-9]/)
+            new_array.push(file_name)
+          end
+        end
+      end
+    end
+    if last_file_name.match(/[A-z]/)
+      new_array.push(last_file_name)
+    end
+    file_array=new_array
     Prawn::Document.generate(output_file, :margin => [0,0,0,0]) do |pdf|
+      array_size=file_array.length
+      counter=0
+      number=0
       original_height=pdf.bounds.height
       file_array.each do |file_name|
         if file_name.match(/[0-9]/) and file_name.match(/[jpg|JPG]$/)
@@ -70,38 +89,44 @@ def cbx_to_pdf(input_file,output_file,work_dir)
           image_file=tmp_dir+"/"+file_name
           image_size=FastImage.size(image_file)
           width=image_size[0]
-          height=image_size[1]
-          if width > height
-            orientation="landscape"
-            scale=pdf.bounds.height/width
-            if pdf.bounds.height < original_height
-              multiplier=original_height/pdf.bounds.height
-              scale=scale*multiplier
-            end
-            scale=scale*0.99
-          else
-            orientation="portrait"
-            scale=pdf.bounds.height/height
-            scale=scale*0.99
-          end
-          if counter == 0
+          if width > 50
+            height=image_size[1]
             if width > height
-              scale=pdf.bounds.width/width
+              orientation="landscape"
+              scale=pdf.bounds.height/width
+              if pdf.bounds.height < original_height
+                multiplier=original_height/pdf.bounds.height
+                if scale*multiplier*width > pdf.bounds.height
+                  scale=scale*multiplier*0.92
+                else
+                  scale=scale*multiplier
+                end
+              end
             else
-              scale=original_height/height
+              orientation="portrait"
+              scale=pdf.bounds.height/height
             end
             scale=scale*0.99
-            pdf.image image_file, :position => :center, :vposition => :center, :scale => scale
-          else
-            pdf.image image_file, :position => :center, :vposition => :center, :scale => scale
-          end
-          number=counter+1
-          pdf.outline.page :title => "Page: #{number}", :destination => counter
-          counter=counter+1
-          if orientation == "portrait"
-            pdf.start_new_page
-          else
-            pdf.start_new_page(:layout => :landscape)
+            if counter == 0
+              if width > height
+                scale=pdf.bounds.width/width
+              else
+                scale=original_height/height
+              end
+              pdf.image image_file, :position => :center, :vposition => :center, :scale => scale
+            else
+              pdf.image image_file, :position => :center, :vposition => :center, :scale => scale
+            end
+            number=counter+1
+            pdf.outline.page :title => "Page: #{number}", :destination => counter
+            counter=counter+1
+            if counter < array_size-1
+              if orientation == "portrait"
+                pdf.start_new_page
+              else
+                pdf.start_new_page(:layout => :landscape)
+              end
+            end
           end
         end
       end

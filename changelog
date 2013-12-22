@@ -7,3 +7,5 @@
 # Another minor bug fix
 # 0.0.4: Mon 23 Dec 2013 05:39:56 EST
 # Added code to change page orientation to landscape if the width of the image is greater than the height
+# 0.0.5: Mon 23 Dec 2013 07:59:26 EST
+# Added code to detect front and back pages
