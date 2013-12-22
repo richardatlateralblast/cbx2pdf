@@ -61,13 +61,13 @@ def cbx_to_pdf(input_file,output_file,work_dir)
     new_array=[]
     last_file_name=""
     file_array.each do |file_name|
-      if file_name.downcase.match(/front/)
+      if file_name.downcase.match(/front|cover/) and !file_name.downcase.match(/back/)
         new_array.insert(0,file_name)
       else
         if file_name.downcase.match(/back/)
           last_file_name=file_name
         else
-          if file_name.match(/[A-z|0-9]/)
+          if file_name.match(/[A-z|0-9]/) and file_name.downcase.match(/jpg$/)
             new_array.push(file_name)
           end
         end
@@ -83,49 +83,51 @@ def cbx_to_pdf(input_file,output_file,work_dir)
       number=0
       original_height=pdf.bounds.height
       file_array.each do |file_name|
-        if file_name.match(/[0-9]/) and file_name.match(/[jpg|JPG]$/)
-          orientation="portrait"
-          scale=1
-          image_file=tmp_dir+"/"+file_name
-          image_size=FastImage.size(image_file)
-          width=image_size[0]
-          if width > 50
-            height=image_size[1]
-            if width > height
-              orientation="landscape"
-              scale=pdf.bounds.height/width
-              if pdf.bounds.height < original_height
-                multiplier=original_height/pdf.bounds.height
-                if scale*multiplier*width > pdf.bounds.height
-                  scale=scale*multiplier*0.92
-                else
-                  scale=scale*multiplier
+        orientation="portrait"
+        scale=1
+        image_file=tmp_dir+"/"+file_name
+        image_size=FastImage.size(image_file)
+        width=image_size[0]
+        if width > 50
+          height=image_size[1]
+          if width > height
+            orientation="landscape"
+            scale=pdf.bounds.height/width
+            if pdf.bounds.height < original_height
+              multiplier=original_height/pdf.bounds.height
+              if scale*multiplier*width > pdf.bounds.height
+                test_height=scale*multiplier*width
+                while test_height > original_height do
+                  scale=scale-0.01
+                  test_height=scale*multiplier*width
                 end
-              end
-            else
-              orientation="portrait"
-              scale=pdf.bounds.height/height
-            end
-            scale=scale*0.99
-            if counter == 0
-              if width > height
-                scale=pdf.bounds.width/width
               else
-                scale=original_height/height
+                scale=scale*multiplier
               end
-              pdf.image image_file, :position => :center, :vposition => :center, :scale => scale
-            else
-              pdf.image image_file, :position => :center, :vposition => :center, :scale => scale
             end
-            number=counter+1
-            pdf.outline.page :title => "Page: #{number}", :destination => counter
-            counter=counter+1
-            if counter < array_size-1
-              if orientation == "portrait"
-                pdf.start_new_page
-              else
-                pdf.start_new_page(:layout => :landscape)
-              end
+          else
+            orientation="portrait"
+            scale=pdf.bounds.height/height
+          end
+          scale=scale*0.99
+          if counter == 0
+            if width > height
+              scale=pdf.bounds.width/width
+            else
+              scale=original_height/height
+            end
+            pdf.image image_file, :position => :center, :vposition => :center, :scale => scale
+          else
+            pdf.image image_file, :position => :center, :vposition => :center, :scale => scale
+          end
+          number=counter+1
+          pdf.outline.page :title => "Page: #{number}", :destination => counter
+          counter=counter+1
+          if counter < array_size-1
+            if orientation == "portrait"
+              pdf.start_new_page
+            else
+              pdf.start_new_page(:layout => :landscape)
             end
           end
         end

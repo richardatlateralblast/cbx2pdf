@@ -9,3 +9,5 @@
 # Added code to change page orientation to landscape if the width of the image is greater than the height
 # 0.0.5: Mon 23 Dec 2013 07:59:26 EST
 # Added code to detect front and back pages
+# 0.0.6: Mon 23 Dec 2013 09:50:06 EST
+# Improved image resizing and cover page detection
