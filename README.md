@@ -6,12 +6,14 @@ Ruby script to convert CBR or CBZ files to PDF.
 Usage
 =====
 
-	cbx2pdf.rb -[h|V] -[i] [FILE] -[o] FILE
+	cbx2pdf.rb -[tvVd:i:o:]
 
-	-V:          Display version information
-	-h:          Display usage information
-	-i FILE:     Input file (.cbr or .cbz)
-	-o FILE:     Output file (pdf)
+	-V:	Display version information
+	-h:	Display usage information
+	-d:	Deskew images (by threshold - 0.40 is good for most images)
+	-t:	Trim pictures
+	-i:	Input file (.cbr or .cbz)
+	-o:	Output file (pdf)
 
 Example
 =======
