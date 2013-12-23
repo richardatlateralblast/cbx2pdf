@@ -17,3 +17,5 @@
 # Added code to trim images
 # 0.0.9: Mon 23 Dec 2013 14:05:11 EST
 # Added image trim and improved scaling
+# 0.1.0: Tue 24 Dec 2013 04:01:06 EST
+# Tweaked scaling code

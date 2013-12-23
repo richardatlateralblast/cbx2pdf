@@ -94,9 +94,13 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode)
       file_array.each do |file_name|
         image_file=tmp_dir+"/"+file_name
         if verbose_mode == 1
+          puts
           puts "Processing:\t"+file_name
         end
         if trim == 1
+          untrimmed_image_size=FastImage.size(image_file)
+          untrimmed_image_width=untrimmed_image_size[0]
+          untrimmed_image_height=untrimmed_image_size[1]
           image=Magick::ImageList.new(image_file);
           if verbose_mode == 1
             puts "Trimming:\t"+file_name
@@ -121,31 +125,48 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode)
         image_height=image_size[1]
         scaled_height=image_height
         if verbose_mode == 1
-          puts "Image Height:\t"+image_height.to_s
-          puts "Image Width:\t"+image_width.to_s
+          if trim == 1
+            puts "Image Height:\t"+image_height.to_s+" ["+untrimmed_image_height.to_s+"]"
+            puts "Image Width:\t"+image_width.to_s+" ["+untrimmed_image_width.to_s+"]"
+          else
+            puts "Image Height:\t"+image_height.to_s
+            puts "Image Width:\t"+image_width.to_s
+          end
         end
         if image_width > 50
           if image_height >= image_width
             orientation="portrait"
             page_height=pdf.bounds.height
             page_width=pdf.bounds.width
+            test_height=scale*image_height
+            while test_height > page_height do
+              scale=scale*0.99
+              test_height=scale*image_height
+              test_width=scale*image_width
+              while test_width > page_width do
+                scale=scale*0.99
+                test_width=scale*image_width
+              end
+            end
           else
             orientation="landscape"
             page_height=pdf.bounds.width
             page_width=pdf.bounds.height
-          end
-          test_width=scale*image_width
-          while test_width > page_width do
-            scale=scale*0.99
             test_width=scale*image_width
-          end
-          test_height=scale*image_height
-          while test_height > page_height do
-            scale=scale*0.99
-            test_height=scale*image_height
+            while test_width > page_width do
+              scale=scale*0.99
+              test_width=scale*image_width
+              test_height=scale*image_height
+              while test_height > page_height do
+                scale=scale*0.99
+                test_height=scale*image_height
+              end
+            end
           end
           scaled_height=scale*image_height
+          scaled_height=scaled_height.round(1)
           scaled_width=scale*image_width
+          scaled_width=scaled_width.round(1)
           if verbose_mode == 1
             puts "Orientation:\t"+orientation
             puts "Scale Factor:\t"+scale.to_s
