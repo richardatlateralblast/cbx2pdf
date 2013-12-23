@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         cbx2pdf
-# Version:      0.0.5
+# Version:      0.0.9
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -16,7 +16,10 @@ require 'getopt/std'
 require 'prawn'
 require 'fastimage'
 require 'filemagic'
+require 'RMagick'
 
+options="tvVd:i:o:"
+verbose_mode=0
 work_dir="/tmp/cbx2pdf"
 
 if !Dir.exists?(work_dir)
@@ -24,25 +27,31 @@ if !Dir.exists?(work_dir)
 end
 
 def print_version()
+  puts
   file_array=IO.readlines $0
   version=file_array.grep(/^# Version/)[0].split(":")[1].gsub(/^\s+/,'').chomp
   packager=file_array.grep(/^# Packager/)[0].split(":")[1].gsub(/^\s+/,'').chomp
   name=file_array.grep(/^# Name/)[0].split(":")[1].gsub(/^\s+/,'').chomp
   puts name+" v. "+version+" "+packager
-end
-
-def print_usage()
-  puts "Usage: "+$0+" -[h|V] -[i] [FILE] -[o] FILE"
   puts
-  puts "-V:          Display version information"
-  puts "-h:          Display usage information"
-  puts "-i FILE:     Input file (.cbr or .cbz)"
-  puts "-o FILE:     Output file (pdf)"
 end
 
-def cbx_to_pdf(input_file,output_file,work_dir)
+def print_usage(options)
+  puts
+  puts "Usage: "+$0+" -["+options+"]"
+  puts
+  puts "-V:\tDisplay version information"
+  puts "-h:\tDisplay usage information"
+  puts "-d:\tDeskew images (by threshold - 0.40 is good for most images)"
+  puts "-t:\tTrim pictures"
+  puts "-i:\tInput file (.cbr or .cbz)"
+  puts "-o:\tOutput file (pdf)"
+  puts
+end
+
+def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode)
   if File.exists?(input_file)
-    tmp_dir=work_dir+"/tmp"
+    tmp_dir=work_dir
     if !Dir.exists?(tmp_dir)
       Dir.mkdir(tmp_dir)
     else
@@ -67,7 +76,7 @@ def cbx_to_pdf(input_file,output_file,work_dir)
         if file_name.downcase.match(/back/)
           last_file_name=file_name
         else
-          if file_name.match(/[A-z|0-9]/) and file_name.downcase.match(/jpg$/)
+          if file_name.match(/[A-z|0-9]/) and file_name.downcase.match(/[jpg|png]$/)
             new_array.push(file_name)
           end
         end
@@ -76,76 +85,129 @@ def cbx_to_pdf(input_file,output_file,work_dir)
     if last_file_name.match(/[A-z]/)
       new_array.push(last_file_name)
     end
-    file_array=new_array
+    file_array=new_array.sort
     Prawn::Document.generate(output_file, :margin => [0,0,0,0]) do |pdf|
       array_size=file_array.length
       counter=0
       number=0
       original_height=pdf.bounds.height
       file_array.each do |file_name|
+        image_file=tmp_dir+"/"+file_name
+        if verbose_mode == 1
+          puts "Processing:\t"+file_name
+        end
+        if trim == 1
+          image=Magick::ImageList.new(image_file);
+          if verbose_mode == 1
+            puts "Trimming:\t"+file_name
+          end
+          image=image.trim!
+          image.write(image_file)
+        end
         orientation="portrait"
         scale=1
         image_file=tmp_dir+"/"+file_name
+        if deskew > 0
+          if verbose_mode == 1
+            puts "Deskewing:\t"+file_name
+          end
+          image=Magick::ImageList.new(image_file);
+          image=image.deskew(threshold=deskew)
+          image.write(image_file)
+        end
         image_size=FastImage.size(image_file)
-        width=image_size[0]
-        if width > 50
-          height=image_size[1]
-          if width > height
-            orientation="landscape"
-            scale=pdf.bounds.height/width
-            if pdf.bounds.height < original_height
-              multiplier=original_height/pdf.bounds.height
-              if scale*multiplier*width > pdf.bounds.height
-                test_height=scale*multiplier*width
-                while test_height > original_height do
-                  scale=scale-0.01
-                  test_height=scale*multiplier*width
-                end
-              else
-                scale=scale*multiplier
-              end
-            end
-          else
+        image_width=image_size[0]
+        scaled_width=image_width
+        image_height=image_size[1]
+        scaled_height=image_height
+        if verbose_mode == 1
+          puts "Image Height:\t"+image_height.to_s
+          puts "Image Width:\t"+image_width.to_s
+        end
+        if image_width > 50
+          if image_height >= image_width
             orientation="portrait"
-            scale=pdf.bounds.height/height
-          end
-          scale=scale*0.99
-          if counter == 0
-            if width > height
-              scale=pdf.bounds.width/width
-            else
-              scale=original_height/height
-            end
-            pdf.image image_file, :position => :center, :vposition => :center, :scale => scale
+            page_height=pdf.bounds.height
+            page_width=pdf.bounds.width
           else
-            pdf.image image_file, :position => :center, :vposition => :center, :scale => scale
+            orientation="landscape"
+            page_height=pdf.bounds.width
+            page_width=pdf.bounds.height
           end
-          number=counter+1
-          pdf.outline.page :title => "Page: #{number}", :destination => counter
-          counter=counter+1
-          if counter < array_size-1
+          test_width=scale*image_width
+          while test_width > page_width do
+            scale=scale*0.99
+            test_width=scale*image_width
+          end
+          test_height=scale*image_height
+          while test_height > page_height do
+            scale=scale*0.99
+            test_height=scale*image_height
+          end
+          scaled_height=scale*image_height
+          scaled_width=scale*image_width
+          if verbose_mode == 1
+            puts "Orientation:\t"+orientation
+            puts "Scale Factor:\t"+scale.to_s
+            puts "Scaled Height:\t"+scaled_height.to_s+" ["+page_height.to_s+"]"
+            puts "Scaled Width:\t"+scaled_width.to_s+" ["+page_width.to_s+"]"
+          end
+          if counter < array_size-1 and counter > 0
             if orientation == "portrait"
-              pdf.start_new_page
+              pdf.start_new_page(:layout => :portrait)
             else
               pdf.start_new_page(:layout => :landscape)
             end
           end
+          pdf.image image_file, :position => :center, :vposition => :center, :height => scaled_height, :width => scaled_width
+          number=counter+1
+          pdf.outline.page :title => "Page: #{number}", :destination => counter
+          counter=counter+1
         end
       end
     end
   end
 end
 
+if !ARGV[0]
+  print_usage(options)
+end
+
 begin
-  opt=Getopt::Std.getopts("i:o:")
+  opt=Getopt::Std.getopts(options)
 rescue
+  print_usage(options)
+  exit
+end
+
+if opt["v"]
+  verbose_mode=1
+end
+
+if opt["V"]
   print_version()
-  print_usage()
+  exit
+end
+
+if opt["h"]
+  print_usage(options)
   exit
 end
 
 if opt["o"]
   output_file=opt["o"]
+end
+
+if opt["t"]
+  trim=1
+else
+  trim=0
+end
+
+if opt["d"]
+  deskew=Float(opt["d"])
+else
+  deskew=0
 end
 
 if opt["i"]
@@ -156,8 +218,9 @@ if opt["i"]
   end
   if !output_file
     output_file=input_file+".pdf"
-    output_file=output_file.gsub(/\.cbr/,'')
-    output_file=output_file.gsub(/\.cbz/,'')
+    ["cbr","cbz","rar","zip"].each do |suffix|
+      output_file=output_file.gsub(/\.#{suffix}/,'')
+    end
   end
-  cbx_to_pdf(input_file,output_file,work_dir)
+  cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode)
 end
