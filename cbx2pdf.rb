@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         cbx2pdf
-# Version:      0.0.9
+# Version:      0.1.1
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -192,10 +192,20 @@ end
 
 if !ARGV[0]
   print_usage(options)
+else
 end
 
 begin
   opt=Getopt::Std.getopts(options)
+  used = 0
+  options.gsub(/:/,"").each_char do |option|
+    if opt[option]
+      used = 1
+    end
+  end
+  if used == 0
+    print_usage
+  end
 rescue
   print_usage(options)
   exit
@@ -237,7 +247,7 @@ if opt["i"]
     pwd=Dir.pwd
     input_file=pwd+"/"+input_file
   end
-  if !output_file
+  if !opt["o"]
     output_file=input_file+".pdf"
     ["cbr","cbz","rar","zip"].each do |suffix|
       output_file=output_file.gsub(/\.#{suffix}/,'')
