@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         cbx2pdf
-# Version:      0.1.3
+# Version:      0.1.4
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -72,13 +72,13 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode)
     if !Dir.exists?(tmp_dir)
       Dir.mkdir(tmp_dir)
     else
-      command = "cd #{tmp_dir} ; rm *"
+      command = "cd #{tmp_dir} ; rm -rf *"
       system(command)
     end
     file_pointer = FileMagic.new
     file_type    = file_pointer.file(input_file)
     if file_type.match(/RAR/)
-      command    = "cd #{tmp_dir} ; /usr/local/bin/unrar y e \"#{input_file}\" 2>&1 > /dev/null"
+      command    = "cd #{tmp_dir} ; /usr/local/bin/unrar -y e \"#{input_file}\" 2>&1 > /dev/null"
       system(command)
       file_array = Dir.entries(tmp_dir)
     else

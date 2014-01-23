@@ -25,3 +25,5 @@
 # Fixed handling of zip files
 # 0.1.3: Thu 23 Jan 2014 22:38:39 EST
 # Added configuration check
+# 0.1.4: Thu 23 Jan 2014 23:24:21 EST
+# Bug fixes
