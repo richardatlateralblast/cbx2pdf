@@ -23,3 +23,5 @@
 # Minor update to argument handling
 # 0.1.2: Thu 23 Jan 2014 22:18:41 EST
 # Fixed handling of zip files
+# 0.1.3: Thu 23 Jan 2014 22:38:39 EST
+# Added configuration check

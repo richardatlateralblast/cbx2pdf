@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         cbx2pdf
-# Version:      0.1.2
+# Version:      0.1.3
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -18,7 +18,7 @@ require 'fastimage'
 require 'filemagic'
 require 'RMagick'
 
-options      = "tvVd:i:o:"
+options      = "ctvVd:i:o:"
 verbose_mode = 0
 work_dir     = "/tmp/cbx2pdf"
 
@@ -46,7 +46,24 @@ def print_usage(options)
   puts "-t:\tTrim pictures"
   puts "-i:\tInput file (.cbr or .cbz)"
   puts "-o:\tOutput file (pdf)"
+  puts "-c:\tCheck local configuration"
   puts
+end
+
+def check_local_config()
+  os_name  = %x[uname]
+  brew_bin = "/usr/local/bin/brew"
+  ["unrar","unzip"].each do |bin_name|
+    bin_file = %x[which #{bin_name}]
+    if !bin_file.match(/#{bin_name}/)
+      if os_name.match(/Darwin/)
+        if File.exists?(brew_bin)
+          %x[#{brew_bin} install #{bin_name}]
+        end
+      end
+    end
+  end
+  return
 end
 
 def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode)
@@ -213,6 +230,13 @@ begin
 rescue
   print_usage(options)
   exit
+end
+
+if opt["c"]
+  check_local_config()
+  exit
+else
+  check_local_config()
 end
 
 if opt["v"]
