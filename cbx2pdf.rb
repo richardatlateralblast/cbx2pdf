@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         cbx2pdf
-# Version:      0.1.1
+# Version:      0.1.2
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -18,9 +18,9 @@ require 'fastimage'
 require 'filemagic'
 require 'RMagick'
 
-options="tvVd:i:o:"
-verbose_mode=0
-work_dir="/tmp/cbx2pdf"
+options      = "tvVd:i:o:"
+verbose_mode = 0
+work_dir     = "/tmp/cbx2pdf"
 
 if !Dir.exists?(work_dir)
   Dir.mkdir(work_dir)
@@ -28,10 +28,10 @@ end
 
 def print_version()
   puts
-  file_array=IO.readlines $0
-  version=file_array.grep(/^# Version/)[0].split(":")[1].gsub(/^\s+/,'').chomp
-  packager=file_array.grep(/^# Packager/)[0].split(":")[1].gsub(/^\s+/,'').chomp
-  name=file_array.grep(/^# Name/)[0].split(":")[1].gsub(/^\s+/,'').chomp
+  file_array = IO.readlines $0
+  version    = file_array.grep(/^# Version/)[0].split(":")[1].gsub(/^\s+/,'').chomp
+  packager   = file_array.grep(/^# Packager/)[0].split(":")[1].gsub(/^\s+/,'').chomp
+  name       = file_array.grep(/^# Name/)[0].split(":")[1].gsub(/^\s+/,'').chomp
   puts name+" v. "+version+" "+packager
   puts
 end
@@ -51,30 +51,34 @@ end
 
 def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode)
   if File.exists?(input_file)
-    tmp_dir=work_dir
+    tmp_dir = work_dir
     if !Dir.exists?(tmp_dir)
       Dir.mkdir(tmp_dir)
     else
-      command="cd #{tmp_dir} ; rm *"
+      command = "cd #{tmp_dir} ; rm *"
       system(command)
     end
-    file_pointer=FileMagic.new
-    file_type=file_pointer.file(input_file)
+    file_pointer = FileMagic.new
+    file_type    = file_pointer.file(input_file)
     if file_type.match(/RAR/)
-      command="cd #{tmp_dir} ; /usr/local/bin/unrar e \"#{input_file}\" 2>&1 > /dev/null"
+      command    = "cd #{tmp_dir} ; /usr/local/bin/unrar y e \"#{input_file}\" 2>&1 > /dev/null"
+      system(command)
+      file_array = Dir.entries(tmp_dir)
     else
-      command="cd #{tmp_dir} ; /usr/bin/unzip \"#{input_file}\" 2>&1 > /dev/null"
+      command    = "cd #{tmp_dir} ; /usr/bin/unzip -o \"#{input_file}\" 2>&1 > /dev/null"
+      system(command)
+      dir_name   = File.basename(input_file,".*")
+      tmp_dir    = tmp_dir+"/"+dir_name
+      file_array = Dir.entries(tmp_dir)
     end
-    system(command)
-    file_array=Dir.entries(tmp_dir)
-    new_array=[]
-    last_file_name=""
+    new_array      = []
+    last_file_name = ""
     file_array.each do |file_name|
       if file_name.downcase.match(/front|cover/) and !file_name.downcase.match(/back/)
         new_array.insert(0,file_name)
       else
         if file_name.downcase.match(/back/)
-          last_file_name=file_name
+          last_file_name = file_name
         else
           if file_name.match(/[A-z|0-9]/) and file_name.downcase.match(/[jpg|png]$/)
             new_array.push(file_name)
@@ -85,45 +89,45 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode)
     if last_file_name.match(/[A-z]/)
       new_array.push(last_file_name)
     end
-    file_array=new_array.sort
+    file_array = new_array.sort
     Prawn::Document.generate(output_file, :margin => [0,0,0,0]) do |pdf|
-      array_size=file_array.length
-      counter=0
-      number=0
-      original_height=pdf.bounds.height
+      array_size = file_array.length
+      counter    = 0
+      number     = 0
+      original_height = pdf.bounds.height
       file_array.each do |file_name|
-        image_file=tmp_dir+"/"+file_name
+        image_file = tmp_dir+"/"+file_name
         if verbose_mode == 1
           puts
           puts "Processing:\t"+file_name
         end
         if trim == 1
-          untrimmed_image_size=FastImage.size(image_file)
-          untrimmed_image_width=untrimmed_image_size[0]
-          untrimmed_image_height=untrimmed_image_size[1]
-          image=Magick::ImageList.new(image_file);
+          untrimmed_image_size   = FastImage.size(image_file)
+          untrimmed_image_width  = untrimmed_image_size[0]
+          untrimmed_image_height = untrimmed_image_size[1]
+          image = Magick::ImageList.new(image_file);
           if verbose_mode == 1
             puts "Trimming:\t"+file_name
           end
-          image=image.trim!
+          image = image.trim!
           image.write(image_file)
         end
-        orientation="portrait"
-        scale=1
-        image_file=tmp_dir+"/"+file_name
+        orientation = "portrait"
+        scale       = 1
+        image_file  = tmp_dir+"/"+file_name
         if deskew > 0
           if verbose_mode == 1
             puts "Deskewing:\t"+file_name
           end
-          image=Magick::ImageList.new(image_file);
-          image=image.deskew(threshold=deskew)
+          image = Magick::ImageList.new(image_file);
+          image = image.deskew(threshold=deskew)
           image.write(image_file)
         end
-        image_size=FastImage.size(image_file)
-        image_width=image_size[0]
-        scaled_width=image_width
-        image_height=image_size[1]
-        scaled_height=image_height
+        image_size    = FastImage.size(image_file)
+        image_width   = image_size[0]
+        scaled_width  = image_width
+        image_height  = image_size[1]
+        scaled_height = image_height
         if verbose_mode == 1
           if trim == 1
             puts "Image Height:\t"+image_height.to_s+" ["+untrimmed_image_height.to_s+"]"
@@ -135,38 +139,38 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode)
         end
         if image_width > 50
           if image_height >= image_width
-            orientation="portrait"
-            page_height=pdf.bounds.height
-            page_width=pdf.bounds.width
-            test_height=scale*image_height
+            orientation = "portrait"
+            page_height = pdf.bounds.height
+            page_width  = pdf.bounds.width
+            test_height = scale*image_height
             while test_height > page_height do
-              scale=scale*0.99
-              test_height=scale*image_height
-              test_width=scale*image_width
+              scale       = scale*0.99
+              test_height = scale*image_height
+              test_width  = scale*image_width
               while test_width > page_width do
-                scale=scale*0.99
-                test_width=scale*image_width
+                scale      = scale*0.99
+                test_width = scale*image_width
               end
             end
           else
-            orientation="landscape"
-            page_height=pdf.bounds.width
-            page_width=pdf.bounds.height
-            test_width=scale*image_width
+            orientation = "landscape"
+            page_height = pdf.bounds.width
+            page_width  = pdf.bounds.height
+            test_width  = scale*image_width
             while test_width > page_width do
-              scale=scale*0.99
-              test_width=scale*image_width
-              test_height=scale*image_height
+              scale       = scale*0.99
+              test_width  = scale*image_width
+              test_height = scale*image_height
               while test_height > page_height do
-                scale=scale*0.99
-                test_height=scale*image_height
+                scale       = scale*0.99
+                test_height = scale*image_height
               end
             end
           end
-          scaled_height=scale*image_height
-          scaled_height=scaled_height.round(1)
-          scaled_width=scale*image_width
-          scaled_width=scaled_width.round(1)
+          scaled_height = scale*image_height
+          scaled_height = scaled_height.round(1)
+          scaled_width  = scale*image_width
+          scaled_width  = scaled_width.round(1)
           if verbose_mode == 1
             puts "Orientation:\t"+orientation
             puts "Scale Factor:\t"+scale.to_s
@@ -181,9 +185,9 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode)
             end
           end
           pdf.image image_file, :position => :center, :vposition => :center, :height => scaled_height, :width => scaled_width
-          number=counter+1
+          number  = counter+1
           pdf.outline.page :title => "Page: #{number}", :destination => counter
-          counter=counter+1
+          counter = counter+1
         end
       end
     end
@@ -192,11 +196,11 @@ end
 
 if !ARGV[0]
   print_usage(options)
-else
+  exit
 end
 
 begin
-  opt=Getopt::Std.getopts(options)
+  opt = Getopt::Std.getopts(options)
   used = 0
   options.gsub(/:/,"").each_char do |option|
     if opt[option]
@@ -212,7 +216,7 @@ rescue
 end
 
 if opt["v"]
-  verbose_mode=1
+  verbose_mode = 1
 end
 
 if opt["V"]
@@ -226,31 +230,31 @@ if opt["h"]
 end
 
 if opt["o"]
-  output_file=opt["o"]
+  output_file = opt["o"]
 end
 
 if opt["t"]
-  trim=1
+  trim = 1
 else
-  trim=0
+  trim = 0
 end
 
 if opt["d"]
-  deskew=Float(opt["d"])
+  deskew = Float(opt["d"])
 else
-  deskew=0
+  deskew = 0
 end
 
 if opt["i"]
-  input_file=opt["i"]
+  input_file = opt["i"]
   if !input_file.match(/\//)
-    pwd=Dir.pwd
-    input_file=pwd+"/"+input_file
+    pwd        = Dir.pwd
+    input_file = pwd+"/"+input_file
   end
   if !opt["o"]
-    output_file=input_file+".pdf"
+    output_file = input_file+".pdf"
     ["cbr","cbz","rar","zip"].each do |suffix|
-      output_file=output_file.gsub(/\.#{suffix}/,'')
+      output_file = output_file.gsub(/\.#{suffix}/,'')
     end
   end
   cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode)

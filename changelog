@@ -21,3 +21,5 @@
 # Tweaked scaling code
 # 0.1.1: Sun 19 Jan 2014 17:46:34 EST
 # Minor update to argument handling
+# 0.1.2: Thu 23 Jan 2014 22:18:41 EST
+# Fixed handling of zip files
