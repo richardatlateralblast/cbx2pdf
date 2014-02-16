@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         cbx2pdf
-# Version:      0.1.5
+# Version:      0.1.6
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -47,6 +47,12 @@ def print_usage(options)
   puts "-i:\tInput file (.cbr or .cbz)"
   puts "-o:\tOutput file (pdf)"
   puts "-c:\tCheck local configuration"
+  puts
+  puts "Examples:"
+  puts
+  puts "cbx2pdf -i ./aditya777.rar -o ./aditya777.pdf"
+  puts "cbx2pdf -i aditya777.rar -o aditya777.pdf"
+  puts "cbx2pdf aditya777.rar aditya777.pdf"
   puts
 end
 
@@ -237,8 +243,15 @@ begin
     print_usage
   end
 rescue
-  print_usage(options)
-  exit
+  if ARGV[0]
+    opt["i"] = ARGV[0]
+    if ARGV[1]
+      opt["o"] = ARGV[1]
+    end
+  else
+    print_usage(options)
+    exit
+  end
 end
 
 if opt["c"]
