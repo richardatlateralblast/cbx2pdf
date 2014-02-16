@@ -27,3 +27,5 @@
 # Added configuration check
 # 0.1.4: Thu 23 Jan 2014 23:24:21 EST
 # Bug fixes
+# 0.1.5: Sun 16 Feb 2014 17:55:30 EST
+# Fixed bug with not handling ./ in file name

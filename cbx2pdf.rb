@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         cbx2pdf
-# Version:      0.1.4
+# Version:      0.1.5
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -211,6 +211,15 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode)
   end
 end
 
+def process_file_name(file_name)
+  file_name = file_name.gsub(/^\.\//,"")
+  if !file_name.match(/\//)
+    current_dir = Dir.pwd
+    file_name   = current_dir+"/"+file_name
+  end
+  return file_name
+end
+
 if !ARGV[0]
   print_usage(options)
   exit
@@ -271,15 +280,15 @@ end
 
 if opt["i"]
   input_file = opt["i"]
-  if !input_file.match(/\//)
-    pwd        = Dir.pwd
-    input_file = pwd+"/"+input_file
-  end
+  input_file = process_file_name(input_file)
   if !opt["o"]
     output_file = input_file+".pdf"
     ["cbr","cbz","rar","zip"].each do |suffix|
       output_file = output_file.gsub(/\.#{suffix}/,'')
     end
+  else
+    output_file = opt["o"]
+    output_file = process_file_name(output_file)
   end
   cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode)
 end
