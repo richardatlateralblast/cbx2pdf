@@ -226,7 +226,7 @@ def process_file_name(file_name)
   return file_name
 end
 
-if !ARGV[0] or ARGV[0] =~ /-h|-?/
+if !ARGV[0] or ARGV[0] =~ /-h|-\?/
   print_usage(options)
   exit
 end
