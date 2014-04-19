@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         cbx2pdf
-# Version:      0.1.6
+# Version:      0.1.7
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -226,7 +226,7 @@ def process_file_name(file_name)
   return file_name
 end
 
-if !ARGV[0]
+if !ARGV[0] or ARGV[0] =~ /-h|-?/
   print_usage(options)
   exit
 end
