@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         cbx2pdf
-# Version:      0.1.7
+# Version:      0.1.8
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -18,9 +18,10 @@ require 'fastimage'
 require 'filemagic'
 require 'RMagick'
 
-options      = "ctvVd:i:o:"
+options      = "ctvVd:i:o:p:"
 verbose_mode = 0
 work_dir     = "/tmp/cbx2pdf"
+page_size    = "A4"
 
 if !Dir.exists?(work_dir)
   Dir.mkdir(work_dir)
@@ -47,6 +48,7 @@ def print_usage(options)
   puts "-i:\tInput file (.cbr or .cbz)"
   puts "-o:\tOutput file (pdf)"
   puts "-c:\tCheck local configuration"
+  puts "-p:\tPage size (default A4)"
   puts
   puts "Examples:"
   puts
@@ -72,7 +74,7 @@ def check_local_config()
   return
 end
 
-def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode)
+def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode,page_size)
   if File.exists?(input_file)
     tmp_dir = work_dir
     if !Dir.exists?(tmp_dir)
@@ -113,7 +115,7 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode)
       new_array.push(last_file_name)
     end
     file_array = new_array.sort
-    Prawn::Document.generate(output_file, :margin => [0,0,0,0]) do |pdf|
+    Prawn::Document.generate(output_file, :margin => [0,0,0,0], :page_size => "A4") do |pdf|
       array_size = file_array.length
       counter    = 0
       number     = 0
@@ -165,29 +167,41 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode)
             orientation = "portrait"
             page_height = pdf.bounds.height
             page_width  = pdf.bounds.width
-            test_height = scale*image_height
-            while test_height > page_height do
-              scale       = scale*0.99
-              test_height = scale*image_height
-              test_width  = scale*image_width
-              while test_width > page_width do
-                scale      = scale*0.99
-                test_width = scale*image_width
-              end
-            end
+            test_width  = image_width
+            test_height = image_height
           else
             orientation = "landscape"
             page_height = pdf.bounds.width
             page_width  = pdf.bounds.height
-            test_width  = scale*image_width
-            while test_width > page_width do
+            test_width  = image_width
+            test_height = image_height
+          end
+          if test_width > page_width
+            while test_width > page_width or test_height > page_height
               scale       = scale*0.99
               test_width  = scale*image_width
               test_height = scale*image_height
-              while test_height > page_height do
-                scale       = scale*0.99
-                test_height = scale*image_height
-              end
+            end
+          end
+          if test_height > page_height
+            while test_height > page_height or test_width > page_width
+              scale       = scale*0.99
+              test_width  = scale*image_width
+              test_height = scale*image_height
+            end
+          end
+          if test_width < page_width
+            while test_width < page_width and test_height < page_height do
+              scale       = scale*1.01
+              test_width  = scale*image_width
+              test_height = scale*image_height
+            end
+          end
+          if test_height < page_height
+            while test_height < page_height and test_width < page_width do
+              scale       = scale*1.01
+              test_width  = scale*image_width
+              test_height = scale*image_height
             end
           end
           scaled_height = scale*image_height
@@ -279,6 +293,10 @@ if opt["o"]
   output_file = opt["o"]
 end
 
+if opt["p"]
+  page_size = opt["p"]
+end
+
 if opt["t"]
   trim = 1
 else
@@ -303,5 +321,5 @@ if opt["i"]
     output_file = opt["o"]
     output_file = process_file_name(output_file)
   end
-  cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode)
+  cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode,page_size)
 end
