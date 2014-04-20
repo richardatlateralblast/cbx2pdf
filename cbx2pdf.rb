@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         cbx2pdf
-# Version:      0.2.1
+# Version:      0.2.2
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -116,11 +116,16 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,image_trim,verbose_mode,pa
       new_array.push(last_file_name)
     end
     file_array    = new_array.sort
-    cover_image   = file_array[0]
-    cover_image   = tmp_dir+"/"+cover_image
-    image_size    = FastImage.size(cover_image)
-    image_width   = image_size[0]
-    image_height  = image_size[1]
+    if !file_array[0]
+      puts "No image files found in: "+input_file
+      exit
+    else
+      cover_image   = file_array[0]
+      cover_image   = tmp_dir+"/"+cover_image
+      image_size    = FastImage.size(cover_image)
+      image_width   = image_size[0]
+      image_height  = image_size[1]
+    end
     if image_width > image_height
       orientation = "landscape"
     else
