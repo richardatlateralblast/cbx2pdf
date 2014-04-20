@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         cbx2pdf
-# Version:      0.2.0
+# Version:      0.2.1
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -106,7 +106,7 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,image_trim,verbose_mode,pa
         if file_name.downcase.match(/back/)
           last_file_name = file_name
         else
-          if file_name.match(/[A-z|0-9]/) and file_name.downcase.match(/[jpg|png]$/)
+          if file_name.match(/[A-z|0-9]/) and file_name.downcase.match(/jpg$|jpeg$|png$/)
             new_array.push(file_name)
           end
         end
@@ -133,10 +133,6 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,image_trim,verbose_mode,pa
       original_height = pdf.bounds.height
       file_array.each do |file_name|
         image_file = tmp_dir+"/"+file_name
-        if verbose_mode == 1
-          puts
-          puts "Processing:\t"+file_name
-        end
         if image_trim == 1
           untrimmed_image_size   = FastImage.size(image_file)
           untrimmed_image_width  = untrimmed_image_size[0]
@@ -158,6 +154,9 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,image_trim,verbose_mode,pa
           image = Magick::ImageList.new(image_file);
           image = image.deskew(threshold=deskew)
           image.write(image_file)
+        end
+        if verbose_mode == 1
+          puts "Processing:\t"+image_file
         end
         image_size    = FastImage.size(image_file)
         image_width   = image_size[0]
