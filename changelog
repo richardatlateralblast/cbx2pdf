@@ -37,3 +37,5 @@
 # Added -p option for page size and cleaned up scaling code
 # 0.1.9: Mon 21 Apr 2014 04:03:19 EST
 # Tweaked scaling code
+# 0.2.0: Mon 21 Apr 2014 09:23:08 EST
+# Added support for image resizing as well as scaling and fixed scaling for 1920x1080 images

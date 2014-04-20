@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         cbx2pdf
-# Version:      0.1.9
+# Version:      0.2.0
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -18,7 +18,7 @@ require 'fastimage'
 require 'filemagic'
 require 'RMagick'
 
-options      = "ctvVd:i:o:p:"
+options      = "crtvVd:i:o:p:"
 verbose_mode = 0
 work_dir     = "/tmp/cbx2pdf"
 page_size    = "A4"
@@ -49,6 +49,7 @@ def print_usage(options)
   puts "-o:\tOutput file (pdf)"
   puts "-c:\tCheck local configuration"
   puts "-p:\tPage size (default A4)"
+  puts "-r:\tResize images rather than scaling them"
   puts
   puts "Examples:"
   puts
@@ -74,7 +75,7 @@ def check_local_config()
   return
 end
 
-def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode,page_size)
+def cbx_to_pdf(input_file,output_file,work_dir,deskew,image_trim,verbose_mode,page_size,image_resize)
   if File.exists?(input_file)
     tmp_dir = work_dir
     if !Dir.exists?(tmp_dir)
@@ -114,8 +115,18 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode,page_siz
     if last_file_name.match(/[A-z]/)
       new_array.push(last_file_name)
     end
-    file_array = new_array.sort
-    Prawn::Document.generate(output_file, :margin => [0,0], :page_size => page_size) do |pdf|
+    file_array    = new_array.sort
+    cover_image   = file_array[0]
+    cover_image   = tmp_dir+"/"+cover_image
+    image_size    = FastImage.size(cover_image)
+    image_width   = image_size[0]
+    image_height  = image_size[1]
+    if image_width > image_height
+      orientation = "landscape"
+    else
+      orientation = "portrait"
+    end
+    Prawn::Document.generate(output_file, :margin => [0,0], :page_size => page_size, :page_layout => :"#{orientation}") do |pdf|
       array_size = file_array.length
       counter    = 0
       number     = 0
@@ -126,7 +137,7 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode,page_siz
           puts
           puts "Processing:\t"+file_name
         end
-        if trim == 1
+        if image_trim == 1
           untrimmed_image_size   = FastImage.size(image_file)
           untrimmed_image_width  = untrimmed_image_size[0]
           untrimmed_image_height = untrimmed_image_size[1]
@@ -154,7 +165,7 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode,page_siz
         image_height  = image_size[1]
         scaled_height = image_height
         if verbose_mode == 1
-          if trim == 1
+          if image_trim == 1
             puts "Image Height:\t"+image_height.to_s+" ["+untrimmed_image_height.to_s+"]"
             puts "Image Width:\t"+image_width.to_s+" ["+untrimmed_image_width.to_s+"]"
           else
@@ -182,19 +193,9 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode,page_siz
               test_width  = scale*image_width
               test_height = scale*image_height
             end
-            while test_height < page_height and test_width < page_width do
-              scale       = scale*1.01
-              test_width  = scale*image_width
-              test_height = scale*image_height
-            end
           end
           if test_width > page_width or test_height > page_height
             while test_width > page_width or test_height > page_height
-              scale       = scale*0.99
-              test_width  = scale*image_width
-              test_height = scale*image_height
-            end
-            while test_height > page_height or test_width > page_width
               scale       = scale*0.99
               test_width  = scale*image_width
               test_height = scale*image_height
@@ -217,7 +218,30 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode,page_siz
               pdf.start_new_page(:layout => :landscape)
             end
           end
-          pdf.image image_file, :position => :center, :vposition => :center, :height => scaled_height, :width => scaled_width
+          if image_resize == 1
+            new_image = Magick::Image.read(image_file).first
+            if orientation == "landscape"
+              if image_width == 1920
+                new_image.resize!(scaled_width*1.4,scaled_height*1.4)
+              else
+                new_image.resize!(scaled_width,scaled_height)
+              end
+            else
+              new_image.resize!(scaled_width,scaled_height)
+            end
+            new_image.write(image_file)
+            pdf.image image_file, :position => :center, :vposition => :center
+          else
+            if orientation == "landscape"
+              if image_width == 1920
+                pdf.image image_file, :position => :center, :vposition => :center, :scale => scale*1.4
+              else
+                pdf.image image_file, :position => :center, :vposition => :center, :scale => scale
+              end
+            else
+              pdf.image image_file, :position => :center, :vposition => :center, :scale => scale
+            end
+          end
           number  = counter+1
           pdf.outline.page :title => "Page: #{number}", :destination => counter
           counter = counter+1
@@ -294,15 +318,21 @@ if opt["p"]
 end
 
 if opt["t"]
-  trim = 1
+  image_trim = 1
 else
-  trim = 0
+  image_trim = 0
 end
 
 if opt["d"]
   deskew = Float(opt["d"])
 else
   deskew = 0
+end
+
+if opt["r"]
+  image_resize = 1
+else
+  image_resize = 0
 end
 
 if opt["i"]
@@ -317,5 +347,5 @@ if opt["i"]
     output_file = opt["o"]
     output_file = process_file_name(output_file)
   end
-  cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode,page_size)
+  cbx_to_pdf(input_file,output_file,work_dir,deskew,image_trim,verbose_mode,page_size,image_resize)
 end
