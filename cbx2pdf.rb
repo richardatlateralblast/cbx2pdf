@@ -115,7 +115,7 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode,page_siz
       new_array.push(last_file_name)
     end
     file_array = new_array.sort
-    Prawn::Document.generate(output_file, :margin => [0,0,0,0], :page_size => "A4") do |pdf|
+    Prawn::Document.generate(output_file, :margin => [0,0,0,0], :page_size => page_size) do |pdf|
       array_size = file_array.length
       counter    = 0
       number     = 0
