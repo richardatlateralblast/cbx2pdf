@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         cbx2pdf
-# Version:      0.1.8
+# Version:      0.1.9
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -115,7 +115,7 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode,page_siz
       new_array.push(last_file_name)
     end
     file_array = new_array.sort
-    Prawn::Document.generate(output_file, :margin => [0,0,0,0], :page_size => page_size) do |pdf|
+    Prawn::Document.generate(output_file, :margin => [0,0], :page_size => page_size) do |pdf|
       array_size = file_array.length
       counter    = 0
       number     = 0
@@ -176,30 +176,26 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,trim,verbose_mode,page_siz
             test_width  = image_width
             test_height = image_height
           end
-          if test_width > page_width
-            while test_width > page_width or test_height > page_height
-              scale       = scale*0.99
-              test_width  = scale*image_width
-              test_height = scale*image_height
-            end
-          end
-          if test_height > page_height
-            while test_height > page_height or test_width > page_width
-              scale       = scale*0.99
-              test_width  = scale*image_width
-              test_height = scale*image_height
-            end
-          end
-          if test_width < page_width
+          if test_width < page_width and test_height < page_height
             while test_width < page_width and test_height < page_height do
               scale       = scale*1.01
               test_width  = scale*image_width
               test_height = scale*image_height
             end
-          end
-          if test_height < page_height
             while test_height < page_height and test_width < page_width do
               scale       = scale*1.01
+              test_width  = scale*image_width
+              test_height = scale*image_height
+            end
+          end
+          if test_width > page_width or test_height > page_height
+            while test_width > page_width or test_height > page_height
+              scale       = scale*0.99
+              test_width  = scale*image_width
+              test_height = scale*image_height
+            end
+            while test_height > page_height or test_width > page_width
+              scale       = scale*0.99
               test_width  = scale*image_width
               test_height = scale*image_height
             end

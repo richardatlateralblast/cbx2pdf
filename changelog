@@ -35,3 +35,5 @@
 # Fixed bug with help (-h)
 # 0.1.8: Sun 20 Apr 2014 21:04:52 EST
 # Added -p option for page size and cleaned up scaling code
+# 0.1.9: Mon 21 Apr 2014 04:03:19 EST
+# Tweaked scaling code
