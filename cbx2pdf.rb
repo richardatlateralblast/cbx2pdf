@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         cbx2pdf
-# Version:      0.2.2
+# Version:      0.2.3
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -150,7 +150,6 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,image_trim,verbose_mode,pa
           image.write(image_file)
         end
         orientation = "portrait"
-        scale       = 1
         image_file  = tmp_dir+"/"+file_name
         if deskew > 0
           if verbose_mode == 1
@@ -177,41 +176,64 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,image_trim,verbose_mode,pa
             puts "Image Width:\t"+image_width.to_s
           end
         end
+        margin_space = 100
         if image_width > 50
           if image_height >= image_width
-            orientation = "portrait"
-            page_height = pdf.bounds.height
-            page_width  = pdf.bounds.width
-            test_width  = image_width
-            test_height = image_height
+            orientation   = "portrait"
+            page_height   = pdf.bounds.height
+            page_width    = pdf.bounds.width
+            if image_height > page_height
+              image_scale   = 1 / (image_height / (page_height - margin_space))
+            else
+              image_scale   = image_height / (page_height - margin_space)
+            end
+            scaled_height = image_scale * image_height
+            scaled_width  = image_scale * image_width
           else
-            orientation = "landscape"
-            page_height = pdf.bounds.width
-            page_width  = pdf.bounds.height
-            test_width  = image_width
-            test_height = image_height
+            orientation   = "landscape"
+            page_height   = pdf.bounds.width
+            page_width    = pdf.bounds.height
+            if image_width > page_width
+              image_scale   = 1 / (image_width / (page_width - margin_space))
+            else
+              image_scale   = image_width / (page_width - margin_space)
+            end
+            scaled_height = image_scale * image_height
+            scaled_width  = image_scale * image_width
           end
-          if test_width < page_width and test_height < page_height
-            while test_width < page_width and test_height < page_height do
-              scale       = scale*1.01
-              test_width  = scale*image_width
-              test_height = scale*image_height
+          if scaled_width < page_width and scaled_height < page_height
+            if orientation == "landscape"
+              new_width   = page_width - margin_space
+              image_scale = new_width / scaled_width
+              scaled_width  = image_scale * scaled_width
+              scaled_height = image_scale * scaled_height
+            else
+              new_height    = page_height - margin_space
+              image_scale   = new_height / scaled_height
+              scaled_width  = image_scale * scaled_width
+              scaled_height = image_scale * scaled_height
+            end
+          else
+            if orientation == "landscape"
+              if scaled_height > page_height
+                new_height    = page_height - margin_space
+                image_scale   = new_height / scaled_height
+                scaled_width  = image_scale * scaled_width
+                scaled_height = image_scale * scaled_height
+              end
+              if scaled_width > page_width
+                new_width     = page_width - margin_space
+                image_scale   = new_width / scaled_width
+                scaled_width  = image_scale * scaled_width
+                scaled_height = image_scale * scaled_height
+              end
             end
           end
-          if test_width > page_width or test_height > page_height
-            while test_width > page_width or test_height > page_height
-              scale       = scale*0.99
-              test_width  = scale*image_width
-              test_height = scale*image_height
-            end
-          end
-          scaled_height = scale*image_height
           scaled_height = scaled_height.round(1)
-          scaled_width  = scale*image_width
           scaled_width  = scaled_width.round(1)
-          if verbose_mode == 1
+         if verbose_mode == 1
             puts "Orientation:\t"+orientation
-            puts "Scale Factor:\t"+scale.to_s
+            puts "Scale Factor:\t"+image_scale.to_s
             puts "Scaled Height:\t"+scaled_height.to_s+" ["+page_height.to_s+"]"
             puts "Scaled Width:\t"+scaled_width.to_s+" ["+page_width.to_s+"]"
           end
@@ -224,27 +246,11 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,image_trim,verbose_mode,pa
           end
           if image_resize == 1
             new_image = Magick::Image.read(image_file).first
-            if orientation == "landscape"
-              if image_width == 1920
-                new_image.resize!(scaled_width*1.4,scaled_height*1.4)
-              else
-                new_image.resize!(scaled_width,scaled_height)
-              end
-            else
-              new_image.resize!(scaled_width,scaled_height)
-            end
+            new_image.resize!(scaled_width,scaled_height)
             new_image.write(image_file)
             pdf.image image_file, :position => :center, :vposition => :center
           else
-            if orientation == "landscape"
-              if image_width == 1920
-                pdf.image image_file, :position => :center, :vposition => :center, :scale => scale*1.4
-              else
-                pdf.image image_file, :position => :center, :vposition => :center, :scale => scale
-              end
-            else
-              pdf.image image_file, :position => :center, :vposition => :center, :scale => scale
-            end
+            pdf.image image_file, :position => :center, :vposition => :center, :height => scaled_height, :width => scaled_width
           end
           number  = counter+1
           pdf.outline.page :title => "Page: #{number}", :destination => counter

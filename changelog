@@ -39,7 +39,9 @@
 # Tweaked scaling code
 # 0.2.0: Mon 21 Apr 2014 09:23:08 EST
 # Added support for image resizing as well as scaling and fixed scaling for 1920x1080 images
-# 1.2.1: Mon 21 Apr 2014 09:38:31 EST
+# 0.2.1: Mon 21 Apr 2014 09:38:31 EST
 # Tweaks to file handling
-# 1.2.2: Mon 21 Apr 2014 09:44:58 EST
+# 0.2.2: Mon 21 Apr 2014 09:44:58 EST
 # Added handling for files without images
+# 0.2.3: Sat 26 Apr 2014 13:42:08 EST
+# Tweaks to scaling code
