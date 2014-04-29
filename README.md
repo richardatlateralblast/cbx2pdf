@@ -17,14 +17,17 @@ Usage
 =====
 
 ```
-cbx2pdf.rb -[tvVd:i:o:]
+cbx2pdf -[crtvVd:i:o:p:]
 
--V:	Display version information
--h:	Display usage information
--d:	Deskew images (by threshold - 0.40 is good for most images)
--t:	Trim pictures
--i:	Input file (.cbr or .cbz)
--o:	Output file (pdf)
+-V: Display version information
+-h: Display usage information
+-d: Deskew images (by threshold - 0.40 is good for most images)
+-t: Trim pictures
+-i: Input file (.cbr or .cbz)
+-o: Output file (pdf)
+-c: Check local configuration
+-p: Page size (default A4)
+-r: Resize images rather than scaling them
 ```
 
 Example
