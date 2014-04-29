@@ -45,3 +45,5 @@
 # Added handling for files without images
 # 0.2.3: Sat 26 Apr 2014 13:42:08 EST
 # Tweaks to scaling code
+# 0.2.4: Tue 29 Apr 2014 23:14:38 EST
+# More tweaks to scaling code

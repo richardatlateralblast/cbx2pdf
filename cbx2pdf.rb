@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         cbx2pdf
-# Version:      0.2.3
+# Version:      0.2.4
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -176,12 +176,21 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,image_trim,verbose_mode,pa
             puts "Image Width:\t"+image_width.to_s
           end
         end
-        margin_space = 100
+
         if image_width > 50
           if image_height >= image_width
             orientation   = "portrait"
             page_height   = pdf.bounds.height
             page_width    = pdf.bounds.width
+            if image_height < page_height
+              if image_height < 400
+                margin_space = 300
+              else
+                margin_space = 80
+              end
+            else
+              margin_space = 125
+            end
             if image_height > page_height
               image_scale   = 1 / (image_height / (page_height - margin_space))
             else
@@ -190,6 +199,15 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,image_trim,verbose_mode,pa
             scaled_height = image_scale * image_height
             scaled_width  = image_scale * image_width
           else
+            if image_width < 600
+              if image_width < 300
+                margin_space = 300
+              else
+                margin_space = 150
+              end
+            else
+              margin_space = 100
+            end
             orientation   = "landscape"
             page_height   = pdf.bounds.width
             page_width    = pdf.bounds.height
