@@ -47,3 +47,7 @@
 # Tweaks to scaling code
 # 0.2.4: Tue 29 Apr 2014 23:14:38 EST
 # More tweaks to scaling code
+# 0.2.5: Thu 29 Dec 2016 16:40:27 AEDT
+# Added code to install gems and some support for wildcards
+# 0.2.6: Thu 29 Dec 2016 18:08:25 AEDT
+# Replaced use of Zip with 7-Zip to handle files compressed with later versions of Zip

@@ -1,7 +1,7 @@
 #!/usr/bin/env ruby
 
 # Name:         cbx2pdf
-# Version:      0.2.4
+# Version:      0.2.6
 # Release:      1
 # License:      Open Source
 # Group:        System
@@ -12,11 +12,38 @@
 # Packager:     Richard Spindler <richard@lateralblast.com.au>
 # Description:  Ruby script to convert CBR and CBZ to PDF
 
-require 'getopt/std'
-require 'prawn'
-require 'fastimage'
-require 'filemagic'
-require 'RMagick'
+def install_gem(load_name,install_name)
+  puts "Information:\tInstalling #{install_name}"
+  %x[gem install #{install_name}]
+  Gem.clear_paths
+  require "#{load_name}"
+end
+
+begin
+  require 'getopt/std'
+rescue LoadError
+  install_gem("getopt","getopt")
+end
+begin
+  require 'prawn'
+rescue LoadError
+  install_gem("prawn","prawn")
+end
+begin LoadError
+  require 'fastimage'
+rescue LoadError
+  install_gem("fastimage","fastimage")
+end
+begin LoadError
+  require 'filemagic'
+rescue LoadError
+  install_gem("filemagic","ruby-filemagic")
+end
+begin
+  require 'RMagick'
+rescue LoadError
+  install_gem("rmagick","rmagick")
+end
 
 options      = "crtvVd:i:o:p:"
 verbose_mode = 0
@@ -62,11 +89,12 @@ end
 def check_local_config()
   os_name  = %x[uname]
   brew_bin = "/usr/local/bin/brew"
-  ["unrar","unzip"].each do |bin_name|
+  ["unrar","7z"].each do |bin_name|
     bin_file = %x[which #{bin_name}]
     if !bin_file.match(/#{bin_name}/)
       if os_name.match(/Darwin/)
         if File.exists?(brew_bin)
+          bin_name = bin_name.gzub(/7z/,"p7zip")
           %x[#{brew_bin} install #{bin_name}]
         end
       end
@@ -86,16 +114,25 @@ def cbx_to_pdf(input_file,output_file,work_dir,deskew,image_trim,verbose_mode,pa
     end
     file_pointer = FileMagic.new
     file_type    = file_pointer.file(input_file)
+    if file_type.match(/PDF/)
+      puts "File: \"#{input_file}\" is already a PDF file"
+      return
+    end
     if file_type.match(/RAR/)
-      command    = "cd #{tmp_dir} ; /usr/local/bin/unrar -y e \"#{input_file}\" 2>&1 > /dev/null"
+      command    = "cd #{tmp_dir} ; unrar -y e \"#{input_file}\" 2>&1 > /dev/null"
       system(command)
       file_array = Dir.entries(tmp_dir)
     else
-      command    = "cd #{tmp_dir} ; /usr/bin/unzip -o \"#{input_file}\" 2>&1 > /dev/null"
+      command    = "cd #{tmp_dir} ; 7z x \"#{input_file}\" -aoa 2>&1 > /dev/null"
       system(command)
       dir_name   = File.basename(input_file,".*")
       tmp_dir    = tmp_dir+"/"+dir_name
-      file_array = Dir.entries(tmp_dir)
+      if File.directory?(tmp_dir)
+        file_array = Dir.entries(tmp_dir)
+      else
+        puts "File '#{input_file}' failed to extract"
+        return
+      end
     end
     new_array      = []
     last_file_name = ""
@@ -305,10 +342,22 @@ begin
     print_usage
   end
 rescue
+  if ARGV.to_s.match(/--version/)
+    print_version()
+    exit
+  end
+  if ARGV.to_s.match(/--help/)
+    print_usage(options)
+    exit
+  end
   if ARGV[0]
     opt["i"] = ARGV[0]
     if ARGV[1]
-      opt["o"] = ARGV[1]
+      if ARGV[1].match(/pdf$|PDF$/)
+        opt["o"] = ARGV[1]
+      else
+        opt["i"] = ARGV
+      end
     end
   else
     print_usage(options)
@@ -363,7 +412,7 @@ else
   image_resize = 0
 end
 
-if opt["i"]
+if opt["i"].class == String
   input_file = opt["i"]
   input_file = process_file_name(input_file)
   if !opt["o"]
@@ -375,5 +424,24 @@ if opt["i"]
     output_file = opt["o"]
     output_file = process_file_name(output_file)
   end
+  puts "Converting \"#{input_file}\" to \"#{output_file}\""
   cbx_to_pdf(input_file,output_file,work_dir,deskew,image_trim,verbose_mode,page_size,image_resize)
 end
+
+if opt["i"].class == Array
+  input_files = opt["i"]
+  input_files.each do |input_file|
+    if File.exist?(input_file)
+      input_file  = process_file_name(input_file)
+      output_file = input_file+".pdf"
+      ["cbr","cbz","rar","zip"].each do |suffix|
+        output_file = output_file.gsub(/\.#{suffix}/,'')
+      end
+      output_file = process_file_name(output_file)
+      puts "Converting \"#{input_file}\" to \"#{output_file}\""
+      cbx_to_pdf(input_file,output_file,work_dir,deskew,image_trim,verbose_mode,page_size,image_resize)
+    end
+  end
+end
+
+
