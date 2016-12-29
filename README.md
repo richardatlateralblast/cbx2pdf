@@ -1,3 +1,6 @@
+
+![alt tag](https://raw.githubusercontent.com/richardatlateralblast/cbx2pdf/master/pow.jpg)
+
 cbx2pdf
 =======
 
@@ -11,7 +14,7 @@ Features:
 
 Requirements:
 
-- unrar and unzip
+- p7zip and unzip
 
 Usage
 =====
@@ -56,3 +59,16 @@ and the second is the output file. For example:
 ```
 cbx2pdf Painter\ \&\ Poet\ William\ Blake.zip Painter\ \&\ Poet\ William\ Blake.pdf
 ```
+
+Wildcards can now also be used, eg:
+
+```
+cbx2pdf *.cbr
+```
+
+License
+-------
+
+This software is licensed as CC-BA (Creative Commons By Attrbution)
+
+http://creativecommons.org/licenses/by/4.0/legalcode
